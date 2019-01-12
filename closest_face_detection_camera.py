@@ -100,15 +100,15 @@ def main():
                     # this currently will only find the vertical offset after handling the horizontal
                     # offset. TODO: implement diagonal directions
                     # find direction from the center with buffer of 1/4 the dimension of the camera view
-                    print('center is %d x %d' % closest_face_center)
-                    print('compare: %d vs %d' % (closest_face_center[0], annotator._dims[0] / 2 + annotator._dims[0] * 0.05))
-                    if closest_face_center[0] > annotator._dims[0] / 2 + annotator._dims[0] * 0.05:
+                    # print('center is %d x %d' % closest_face_center)
+                    # print('compare: %d vs %d' % (closest_face_center[0], annotator._dims[0] / 2 + annotator._dims[0] * 0.05))
+                    if closest_face_center[0] > annotator._dims[0] / 2 + annotator._dims[0] * 0.10:
                         print('Move camera right')
-                    elif closest_face_center[0] < annotator._dims[0] / 2 - annotator._dims[0] * 0.05:
+                    elif closest_face_center[0] < annotator._dims[0] / 2 - annotator._dims[0] * 0.10:
                         print('Move camera left')
-                    elif closest_face_center[1] > annotator._dims[1] / 2 + annotator._dims[1] * 0.05:
+                    elif closest_face_center[1] > annotator._dims[1] / 2 + annotator._dims[1] * 0.10:
                         print('Move camera down')
-                    elif closest_face_center[1] < annotator._dims[1] / 2 - annotator._dims[1] * 0.05:
+                    elif closest_face_center[1] < annotator._dims[1] / 2 - annotator._dims[1] * 0.10:
                         print('Move camera right')
                     else:
                         print('Don\'t move camera')
