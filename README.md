@@ -5,6 +5,7 @@ original path of repo/folder: ~/AIY-projects-python/src/examples/vision
 
 Instructions:
 ```
+sudo systemctl stop joy_detection_demo
 cd ~/AIY-projects-python/src/examples/vision
 ./closest_face_detection_camera.py
 ```
