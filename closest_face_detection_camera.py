@@ -80,16 +80,40 @@ def main():
                 #     annotator.bounding_box(transform(face.bounding_box), fill=0)
                     # print('size (width by height): %d by %d' % (face.bounding_box[2], face.bounding_box[3]))
                 closest_face_size = 0
+                closest_face = None
                 for face in faces:
-                    face_size = face.bounding_box[2] * face.bounding_box[3]
+                    face_size = face.bounding_box[2] * face.bounding_box[3] # width * height
                     if face_size > closest_face_size:
                         closest_face_size = face_size
                         closest_face = face
                 if closest_face != None:
-                    annotator.bounding_box(transform(closest_face.bounding_box), fill=0)
+                    annotator.bounding_box(
+                        transform(closest_face.bounding_box), fill=0)
+
                 annotator.update()
                 print('Iteration #%d: num_faces=%d' % (i, len(faces)))
-                closest_face = None
+
+                if closest_face != None:
+                    closest_face_dims_transformed = transform(closest_face.bounding_box)
+                    closest_face_center = ((closest_face_dims_transformed[0] + closest_face_dims_transformed[2]) / 2, (closest_face_dims_transformed[1] + closest_face_dims_transformed[3]) / 2)  # (x + width) / 2
+
+                    # this currently will only find the vertical offset after handling the horizontal
+                    # offset. TODO: implement diagonal directions
+                    # find direction from the center with buffer of 1/4 the dimension of the camera view
+                    print('center is %d x %d' % closest_face_center)
+                    print('compare: %d vs %d' % (closest_face_center[0], annotator._dims[0] / 2 + annotator._dims[0] * 0.05))
+                    if closest_face_center[0] > annotator._dims[0] / 2 + annotator._dims[0] * 0.05:
+                        print('Move camera right')
+                    elif closest_face_center[0] < annotator._dims[0] / 2 - annotator._dims[0] * 0.05:
+                        print('Move camera left')
+                    elif closest_face_center[1] > annotator._dims[1] / 2 + annotator._dims[1] * 0.05:
+                        print('Move camera down')
+                    elif closest_face_center[1] < annotator._dims[1] / 2 - annotator._dims[1] * 0.05:
+                        print('Move camera right')
+                    else:
+                        print('Don\'t move camera')
+
+                closest_face=None # reset
 
         camera.stop_preview()
 
