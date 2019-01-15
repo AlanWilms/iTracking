@@ -26,4 +26,7 @@ Move camera down
 ```
 
 ## Resources:
-https://pinout.xyz/pinout/aiy_vision_bonnet
+* [General procedure](http://stanford.edu/class/ee267/Spring2018/report_griffin_ramirez.pdf)
+* [Eye classification](https://arxiv.org/pdf/1605.05258.pdf)
+* [Servo example](https://github.com/google/aiyprojects-raspbian/blob/aiyprojects/src/examples/gpiozero/servo_example.py)
+* [GPIO expansion pins](https://aiyprojects.withgoogle.com/vision/#makers-guide--gpio-expansion-pins)
