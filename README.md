@@ -24,3 +24,6 @@ Move camera down
 Iteration #102: num_faces=1
 Move camera down
 ```
+
+## Resources:
+https://pinout.xyz/pinout/aiy_vision_bonnet
