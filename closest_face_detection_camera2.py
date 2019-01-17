@@ -55,7 +55,14 @@ def main():
 
         # Start the camera stream.
         camera.framerate = 30
-        camera.start_preview()
+        # camera.start_preview()
+        camera.start_preview(fullscreen=False, window=(100,100,640,480))
+        time.sleep(2)
+        camera.preview.window=(200,200,640,480)
+        time.sleep(2)
+        camera.preview.window=(0,0,1280,480)
+        time.sleep(2)
+
 
 if __name__ == '__main__':
     main()
