@@ -30,7 +30,7 @@ Instructions:
 ```
 sudo systemctl stop joy_detection_demo
 cd ~/AIY-projects-python/src/examples/vision/gpiozero
-sudo python3 teset_stepper2.py
+sudo python3 test_stepper2.py
 ```
 
 ## Resources:
