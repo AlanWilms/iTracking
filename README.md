@@ -25,6 +25,14 @@ Iteration #102: num_faces=1
 Move camera down
 ```
 
+## Stepper Mottors
+Instructions:
+```
+sudo systemctl stop joy_detection_demo
+cd ~/AIY-projects-python/src/examples/vision/gpiozero
+sudo python3 teset_stepper2.py
+```
+
 ## Resources:
 * [General procedure](http://stanford.edu/class/ee267/Spring2018/report_griffin_ramirez.pdf)
 * [Eye classification](https://arxiv.org/pdf/1605.05258.pdf)
