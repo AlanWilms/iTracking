@@ -21,6 +21,7 @@ Example:
 face_detection_camera.py --num_frames 10
 """
 import argparse
+import time
 
 from aiy.vision.inference import CameraInference
 from aiy.vision.models import face_detection
