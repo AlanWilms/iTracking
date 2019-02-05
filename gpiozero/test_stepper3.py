@@ -64,10 +64,10 @@ while True:
 					LED2.on()
 				else:
 					LED2.off()
-			
+
 			elif pin == 3:
 				if halfstep_seq[halfstep][pin] == 1:
 					LED4.on()
 				else:
-					LED4.off()	
+					LED4.off()
 			# sleep(0.0000001)
