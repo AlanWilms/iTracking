@@ -53,4 +53,4 @@ while True:
       current_pin.off()
 
   step_counter = (step_counter + dir) % seq_len
-  time.sleep(waitTime)     						# Wait before moving on
+  time.sleep(wait_time)     						# Wait before moving on
