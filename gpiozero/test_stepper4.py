@@ -21,7 +21,7 @@ dir = -1        								# Set to 1 for clockwise
                        							# Set to -1 for anti-clockwise
 high_speed = True          						# mode = 1: Low Speed ==> Higher Power
                            						# mode = 0: High Speed ==> Lower Power
-if not mode:              						# Low Speed ==> High Power
+if not high_speed:              						# Low Speed ==> High Power
   seq = [[1,0,0,1],
              [1,0,0,0],
              [1,1,0,0],
@@ -51,6 +51,6 @@ while True:
       current_pin.on()
     else:
       current_pin.off()
-	  
+
   step_counter = (step_counter + dir) % seq_len
   time.sleep(waitTime)     						# Wait before moving on
