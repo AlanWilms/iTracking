@@ -139,12 +139,13 @@ int main(int argc, char **argv)
   }
   cv::CascadeClassifier faceCascade;
   cv::CascadeClassifier eyeCascade;
-  if (!faceCascade.load("/Users/AlanWilms/Desktop/Senior Design/Open CV Eye Detection/haarcascade_frontalface_alt.xml"))
+  if (!faceCascade.load("../haarcascade_frontalface_alt.xml"))
   {
       std::cerr << "Could not load face detector." << std::endl;
       return -1;
-  }    
-  if (!eyeCascade.load("/Users/AlanWilms/Desktop/Senior Design/Open CV Eye Detection/haarcascade_eye_tree_eyeglasses.xml"))
+  }
+
+  if (!eyeCascade.load("../haarcascade_eye_tree_eyeglasses.xml"))
   {
       std::cerr << "Could not load eye detector." << std::endl;
       return -1;

@@ -1,4 +1,4 @@
-# Install script for directory: /Users/AlanWilms/Desktop/Senior Design/Open CV Eye Detection
+# Install script for directory: /Users/AlanWilms/Desktop/Senior Design/iTracking Repo/Open CV Eye Detection
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -35,5 +35,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/AlanWilms/Desktop/Senior Design/Open CV Eye Detection/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/AlanWilms/Desktop/Senior Design/iTracking Repo/Open CV Eye Detection/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

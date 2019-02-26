@@ -1,1 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/c++  -g -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/Open_CV_Eye_Detection.dir/eye_detector.cpp.o  -o Open_CV_Eye_Detection 

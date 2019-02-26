@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/Users/AlanWilms/Desktop/Senior Design/Open CV Eye Detection/eye_detector.cpp
+/Users/AlanWilms/Desktop/Senior Design/iTracking Repo/Open CV Eye Detection/eye_detector.cpp
 iostream
 -
 opencv2/core/core.hpp
