@@ -4,6 +4,10 @@ import sys
 import cv2
 import numpy as np
 import math
+import threading
+import time
+import random
+
 
 class EyeTracker:
     # define several class variables
@@ -24,6 +28,20 @@ class EyeTracker:
         if not cap.isOpened():
             print("Webcam not detected.")
 
+        self.frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        self.frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        self.frame_rate = cap.get(cv2.CAP_PROP_FPS)
+        print("Video stats: width = {0:.0f} px | height = {1:.0f} px | FPS = {2:.0f} frames per second.".format(
+            self.frame_width, self.frame_height, self.frame_rate))
+
+        self.message = ""
+        self.calibration = 0
+
+        # start calibration thread
+        calibration = threading.Thread(target=self.startCalibration, args=())
+        calibration.daemon = True
+        calibration.start()
+
         while(True):
             # Capture frame-by-frame
             ret, frame = cap.read()
@@ -31,8 +49,8 @@ class EyeTracker:
             if not frame.data:
                 break
 
-            frame=cv2.flip(frame,1)
-            frame = self.processFrames(frame)
+            frame = cv2.flip(frame, 1)
+            frame = self.process_frames(frame)
 
             # Display the resulting frame
             cv2.imshow('Webcam', frame)
@@ -47,7 +65,7 @@ class EyeTracker:
         cap.release()
         cv2.destroyAllWindows()
 
-    def getLeftEye(self, eyes):
+    def get_left_eye(self, eyes):
         # safety check
         assert (len(eyes) >= 1), "no eyes detected for tracking!"
         leftmost_x = eyes[0][0]  # x
@@ -60,15 +78,18 @@ class EyeTracker:
                 leftmost_index = i
         # print(leftmost_x)
         return eyes[leftmost_index]
-    def processFrames(self, frame):
+
+    def process_frames(self, frame):
         grayscale = cv2.equalizeHist(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
 
         # convert image to grayscale and increase contrast
         faces = self.face_cascade.detectMultiScale(
             grayscale, scaleFactor=1.1, minNeighbors=2, flags=0 | cv2.CASCADE_SCALE_IMAGE, minSize=(150, 150))
+
+        # check cannot be "not faces" because using NumPy arrays
         if len(faces) == 0:
             print("no faces detected")
-            return frame
+            return self.add_text(frame)
 
         # print(faces)
         # face = grayscale[faces[0]]
@@ -77,7 +98,7 @@ class EyeTracker:
         closest_face = None
         closest_size = None
         for face in faces:
-            size = face[2] * face[3] # w * h
+            size = face[2] * face[3]  # w * h
             if closest_face is None or size > closest_size:
                 closest_face = face
                 closest_size = size
@@ -93,9 +114,9 @@ class EyeTracker:
             grayscale_face, scaleFactor=1.1, minNeighbors=2, flags=0 | cv2.CASCADE_SCALE_IMAGE, minSize=(30, 30))
         if len(eyes) != 2:
             print("no eyes detected")
-            return frame
+            return self.add_text(frame)
 
-        left_eye = self.getLeftEye(eyes)
+        left_eye = self.get_left_eye(eyes)
         for eye in eyes:
             ex, ey, ew, eh = eye
             cv2.rectangle(frame, (x + ex, y + ey), (x + ex + ew, y + ey + eh),
@@ -111,9 +132,10 @@ class EyeTracker:
         kernel = np.ones((3, 3), np.uint8)
 
         # processing to remove small noise
+        # originally set to 2 and 3, respectively
         dilation = cv2.dilate(thres, kernel, iterations=2)
         erosion = cv2.erode(dilation, kernel, iterations=3)
-        
+
         # find contours
         contours, hierarchy = cv2.findContours(
             erosion, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
@@ -130,18 +152,63 @@ class EyeTracker:
                 cy = int(M['m01']/M['m00'])
                 for contour in contours:
                     # distance between center and potential pupil
-                    distance = math.sqrt((cy - center[0])**2 + (cx - center[1])**2)
-                    if closest_distance == None or distance < closest_distance:
+                    distance = math.sqrt(
+                        (cy - center[0])**2 + (cx - center[1])**2)
+                    if closest_distance is None or distance < closest_distance:
                         closest_cx = cx
                         closest_cy = cy
                         closest_distance = distance
 
         if closest_cx is not None and closest_cy is not None:
             # base size of pupil to size of eye
-            cv2.line(frame, (x + lex + closest_cx, y + ley + closest_cy), (x + lex + closest_cx, y + ley + closest_cy), (0, 140, 255), lew//7)
+            cv2.circle(frame, (x + lex + closest_cx, y + ley + closest_cy),
+                       lew//12, (0, 140, 255), -1)
 
-        return frame
+        # self.frame = frame
+        return self.add_text(frame)
         # return grayscale
+
+    def add_text(self, frame):
+        if (self.message != ""):
+            cv2.putText(frame, self.message,
+                        (50, int(self.frame_height) - 15),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        (255, 255, 255),
+                        2)
+
+        radius = random.randint(12, 13)
+        color = (0, 0, 139)
+        offset = 20
+        if (self.calibration > 0):
+            if self.calibration == 1:
+                cv2.circle(frame, (offset, offset), radius, color, -1)
+            elif self.calibration == 2:
+                cv2.circle(frame, (int(self.frame_width) -
+                                   offset, offset), radius, color, -1)
+            elif self.calibration == 3:
+                cv2.circle(frame, (int(self.frame_width) - offset,
+                                   int(self.frame_height) - offset), radius, color, -1)
+            else:
+                # calibration = 4
+                cv2.circle(frame, (offset, int(self.frame_height) -
+                                   offset), radius, color, -1)
+        return frame
+
+    def startCalibration(self):
+        self.message = "Welcome to the iTracker!"
+        time.sleep(7.5)
+        self.message = "Starting calibration..."
+        time.sleep(5)
+        self.message = "Please look at the sequences of four red dots as they appear."
+        time.sleep(5)
+        for _ in range(1, 5):
+            self.calibration = self.calibration + 1
+            time.sleep(5)
+
+        # end of calibration
+        self.calibration = 0
+        self.message = ""
 
 
 # def getEyeball(eye, circles):
