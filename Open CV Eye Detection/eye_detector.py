@@ -7,6 +7,7 @@ import math
 import threading
 import time
 import random
+from scipy import stats
 
 
 class EyeTracker:
@@ -180,11 +181,13 @@ class EyeTracker:
                 #     x + lex + closest_cx, y + ley + closest_cy)
                 # self.add_calibration_data(closest_cx, closest_cy)
                 self.add_calibration_data(percentage_x, percentage_y)
-            if self.calibration_stage == 5:
+            if self.calibration_stage >= 5:
                 radius = 10
 
-                gaze_x = ((percentage_x - self.left) / (self.right - self.left)) * self.frame_width
-                gaze_y = ((percentage_y - self.bottom) / (self.top - self.bottom)) * self.frame_height
+                gaze_x = ((percentage_x - self.left) /
+                          (self.right - self.left)) * self.frame_width
+                gaze_y = ((percentage_y - self.top) /
+                          (self.bottom - self.top)) * self.frame_height
 
                 if percentage_x < self.left:
                     gaze_x = 0
@@ -199,15 +202,16 @@ class EyeTracker:
                 # adjusting from the edges
                 if gaze_x <= radius:
                     gaze_x += radius
-                elif gaze_x >= radius:
+                elif gaze_x + radius >= self.frame_width:
                     gaze_x -= radius
 
                 if gaze_y <= radius:
                     gaze_y += radius
-                elif gaze_y >= radius:
+                elif gaze_y + radius >= self.frame_height:
                     gaze_y -= radius
 
-                cv2.circle(frame, (int(round(gaze_x)), int(round(gaze_y))), radius, (0, 0, 139), -1)
+                cv2.circle(frame, (int(round(gaze_x)), int(
+                    round(gaze_y))), radius, (0, 0, 139), -1)
 
         # self.frame = frame
         return self.add_text(frame)
@@ -243,14 +247,14 @@ class EyeTracker:
     def add_calibration_data(self, x, y):
         if (self.calibration_stage > 0):
             if self.calibration_stage == 1:
-                self.calibration_stage1_data.append((x, y))
+                self.calibration_stage1_data.append([x, y])
             elif self.calibration_stage == 2:
-                self.calibration_stage2_data.append((x, y))
+                self.calibration_stage2_data.append([x, y])
             elif self.calibration_stage == 3:
-                self.calibration_stage3_data.append((x, y))
+                self.calibration_stage3_data.append([x, y])
             else:
                 # calibration = 4
-                self.calibration_stage4_data.append((x, y))
+                self.calibration_stage4_data.append([x, y])
 
     def start_calibration(self):
         self.message = "Welcome to the iTracker!"
@@ -266,32 +270,46 @@ class EyeTracker:
         # end of calibration
         self.calibration_stage = 5
         self.message = ""
-        self.process_calibration_data()
+        self.process_calibration_data(True)
 
-    def process_calibration_data(self):
-        # print("length")
-        # print(len(self.calibration_stage1_data) // 3, len(self.calibration_stage1_data) - 1)
-        # print((len(self.calibration_stage1_data) - len(self.calibration_stage1_data) // 3))
-        top_left_x = sum(i[0] for i in self.calibration_stage1_data[len(self.calibration_stage1_data) // 3: len(
-            self.calibration_stage1_data) - 1]) / (len(self.calibration_stage1_data) - (len(self.calibration_stage1_data) // 3) - 1)
-        top_left_y = sum(i[1] for i in self.calibration_stage1_data[len(self.calibration_stage1_data) // 3: len(
-            self.calibration_stage1_data) - 1]) / (len(self.calibration_stage1_data) - (len(self.calibration_stage1_data) // 3) - 1)
-        # print("first")
-        # print(x, y)
-        top_right_x = sum(i[0] for i in self.calibration_stage2_data[len(self.calibration_stage2_data) // 3: len(
-            self.calibration_stage2_data) - 1]) / (len(self.calibration_stage2_data) - (len(self.calibration_stage2_data) // 3) - 1)
-        top_right_y = sum(i[1] for i in self.calibration_stage2_data[len(self.calibration_stage2_data) // 3: len(
-            self.calibration_stage2_data) - 1]) / (len(self.calibration_stage2_data) - (len(self.calibration_stage2_data) // 3) - 1)
-        # print("second")
-        # print(x, y)
-        bottom_right_x = sum(i[0] for i in self.calibration_stage3_data[len(self.calibration_stage3_data) // 3: len(
-            self.calibration_stage3_data) - 1]) / (len(self.calibration_stage3_data) - (len(self.calibration_stage3_data) // 3) - 1)
-        bottom_right_y = sum(i[1] for i in self.calibration_stage3_data[len(self.calibration_stage3_data) // 3: len(
-            self.calibration_stage3_data) - 1]) / (len(self.calibration_stage3_data) - (len(self.calibration_stage3_data) // 3) - 1)
-        bottom_left_x = sum(i[0] for i in self.calibration_stage4_data[len(self.calibration_stage4_data) // 3: len(
-            self.calibration_stage4_data) - 1]) / (len(self.calibration_stage4_data) - (len(self.calibration_stage4_data) // 3) - 1)
-        bottom_left_y = sum(i[1] for i in self.calibration_stage4_data[len(self.calibration_stage4_data) // 3: len(
-            self.calibration_stage4_data) - 1]) / (len(self.calibration_stage4_data) - (len(self.calibration_stage4_data) // 3) - 1)
+    def process_calibration_data(self, remove_outliers=True):
+        top_left_x = 0
+        top_left_y = 0
+        top_right_x = 0
+        top_right_y = 0
+        bottom_left_x = 0
+        bottom_left_y = 0
+        bottom_right_x = 0
+        bottom_right_y = 0
+
+        # removing outliers will account for times when the iTracking fails and thinks the pupil is on the eye bounding box border  
+        if not remove_outliers:
+            top_left_x = sum(i[0] for i in self.calibration_stage1_data[len(self.calibration_stage1_data) // 3: len(
+                self.calibration_stage1_data) - 1]) / (len(self.calibration_stage1_data) - (len(self.calibration_stage1_data) // 3) - 1)
+            top_left_y = sum(i[1] for i in self.calibration_stage1_data[len(self.calibration_stage1_data) // 3: len(
+                self.calibration_stage1_data) - 1]) / (len(self.calibration_stage1_data) - (len(self.calibration_stage1_data) // 3) - 1)
+            top_right_x = sum(i[0] for i in self.calibration_stage2_data[len(self.calibration_stage2_data) // 3: len(
+                self.calibration_stage2_data) - 1]) / (len(self.calibration_stage2_data) - (len(self.calibration_stage2_data) // 3) - 1)
+            top_right_y = sum(i[1] for i in self.calibration_stage2_data[len(self.calibration_stage2_data) // 3: len(
+                self.calibration_stage2_data) - 1]) / (len(self.calibration_stage2_data) - (len(self.calibration_stage2_data) // 3) - 1)
+            bottom_right_x = sum(i[0] for i in self.calibration_stage3_data[len(self.calibration_stage3_data) // 3: len(
+                self.calibration_stage3_data) - 1]) / (len(self.calibration_stage3_data) - (len(self.calibration_stage3_data) // 3) - 1)
+            bottom_right_y = sum(i[1] for i in self.calibration_stage3_data[len(self.calibration_stage3_data) // 3: len(
+                self.calibration_stage3_data) - 1]) / (len(self.calibration_stage3_data) - (len(self.calibration_stage3_data) // 3) - 1)
+            bottom_left_x = sum(i[0] for i in self.calibration_stage4_data[len(self.calibration_stage4_data) // 3: len(
+                self.calibration_stage4_data) - 1]) / (len(self.calibration_stage4_data) - (len(self.calibration_stage4_data) // 3) - 1)
+            bottom_left_y = sum(i[1] for i in self.calibration_stage4_data[len(self.calibration_stage4_data) // 3: len(
+                self.calibration_stage4_data) - 1]) / (len(self.calibration_stage4_data) - (len(self.calibration_stage4_data) // 3) - 1)
+        else:
+            proportiontocut = 0.10
+            top_left_x, top_left_y = stats.trim_mean(np.array(self.calibration_stage1_data[len(
+                self.calibration_stage1_data) // 3: len(self.calibration_stage1_data) - 1]), proportiontocut, axis=0)
+            top_right_x, top_right_y = stats.trim_mean(np.array(self.calibration_stage2_data[len(
+                self.calibration_stage2_data) // 3: len(self.calibration_stage2_data) - 1]), proportiontocut, axis=0)
+            bottom_right_x, bottom_right_y = stats.trim_mean(np.array(self.calibration_stage3_data[len(
+                self.calibration_stage3_data) // 3: len(self.calibration_stage3_data) - 1]), proportiontocut, axis=0)
+            bottom_left_x, bottom_left_y = stats.trim_mean(np.array(self.calibration_stage4_data[len(
+                self.calibration_stage4_data) // 3: len(self.calibration_stage4_data) - 1]), proportiontocut, axis=0)
 
         self.left = (bottom_left_x + top_left_x) / 2
         self.right = (bottom_right_x + top_right_x) / 2
