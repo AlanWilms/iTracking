@@ -34,11 +34,20 @@ class EyeTracker:
         print("Video stats: width = {0:.0f} px | height = {1:.0f} px | FPS = {2:.0f} frames per second.".format(
             self.frame_width, self.frame_height, self.frame_rate))
 
+        self.sleep_time = 5
         self.message = ""
-        self.calibration = 0
+        self.calibration_stage = 0
+        self.calibration_stage1_data = []
+        self.calibration_stage2_data = []
+        self.calibration_stage3_data = []
+        self.calibration_stage4_data = []
+        self.top = 0
+        self.bottom = 0
+        self.left = 0
+        self.right = 0
 
         # start calibration thread
-        calibration = threading.Thread(target=self.startCalibration, args=())
+        calibration = threading.Thread(target=self.start_calibration, args=())
         calibration.daemon = True
         calibration.start()
 
@@ -163,6 +172,42 @@ class EyeTracker:
             # base size of pupil to size of eye
             cv2.circle(frame, (x + lex + closest_cx, y + ley + closest_cy),
                        lew//12, (0, 140, 255), -1)
+            # process calibration
+            percentage_x = closest_cx / lew
+            percentage_y = closest_cy / leh
+            if self.calibration_stage > 0 and self.calibration_stage < 5:
+                # self.add_calibration_data(
+                #     x + lex + closest_cx, y + ley + closest_cy)
+                # self.add_calibration_data(closest_cx, closest_cy)
+                self.add_calibration_data(percentage_x, percentage_y)
+            if self.calibration_stage == 5:
+                radius = 10
+
+                gaze_x = ((percentage_x - self.left) / (self.right - self.left)) * self.frame_width
+                gaze_y = ((percentage_y - self.bottom) / (self.top - self.bottom)) * self.frame_height
+
+                if percentage_x < self.left:
+                    gaze_x = 0
+                elif percentage_x > self.right:
+                    gaze_x = self.frame_width
+
+                if percentage_y < self.top:
+                    gaze_y = 0
+                elif percentage_y > self.bottom:
+                    gaze_y = self.frame_height
+
+                # adjusting from the edges
+                if gaze_x <= radius:
+                    gaze_x += radius
+                elif gaze_x >= radius:
+                    gaze_x -= radius
+
+                if gaze_y <= radius:
+                    gaze_y += radius
+                elif gaze_y >= radius:
+                    gaze_y -= radius
+
+                cv2.circle(frame, (int(round(gaze_x)), int(round(gaze_y))), radius, (0, 0, 139), -1)
 
         # self.frame = frame
         return self.add_text(frame)
@@ -180,35 +225,82 @@ class EyeTracker:
         radius = random.randint(12, 13)
         color = (0, 0, 139)
         offset = 20
-        if (self.calibration > 0):
-            if self.calibration == 1:
+        if (self.calibration_stage > 0):
+            if self.calibration_stage == 1:
                 cv2.circle(frame, (offset, offset), radius, color, -1)
-            elif self.calibration == 2:
+            elif self.calibration_stage == 2:
                 cv2.circle(frame, (int(self.frame_width) -
                                    offset, offset), radius, color, -1)
-            elif self.calibration == 3:
+            elif self.calibration_stage == 3:
                 cv2.circle(frame, (int(self.frame_width) - offset,
                                    int(self.frame_height) - offset), radius, color, -1)
-            else:
-                # calibration = 4
+            elif self.calibration_stage == 4:
                 cv2.circle(frame, (offset, int(self.frame_height) -
                                    offset), radius, color, -1)
+            # calbiration_stage == 5 means done
         return frame
 
-    def startCalibration(self):
+    def add_calibration_data(self, x, y):
+        if (self.calibration_stage > 0):
+            if self.calibration_stage == 1:
+                self.calibration_stage1_data.append((x, y))
+            elif self.calibration_stage == 2:
+                self.calibration_stage2_data.append((x, y))
+            elif self.calibration_stage == 3:
+                self.calibration_stage3_data.append((x, y))
+            else:
+                # calibration = 4
+                self.calibration_stage4_data.append((x, y))
+
+    def start_calibration(self):
         self.message = "Welcome to the iTracker!"
-        time.sleep(7.5)
+        time.sleep(self.sleep_time * 1.5)
         self.message = "Starting calibration..."
-        time.sleep(5)
+        time.sleep(self.sleep_time)
         self.message = "Please look at the sequences of four red dots as they appear."
-        time.sleep(5)
-        for _ in range(1, 5):
-            self.calibration = self.calibration + 1
-            time.sleep(5)
+        time.sleep(self.sleep_time)
+        for _ in range(4):
+            self.calibration_stage = self.calibration_stage + 1
+            time.sleep(self.sleep_time)
 
         # end of calibration
-        self.calibration = 0
+        self.calibration_stage = 5
         self.message = ""
+        self.process_calibration_data()
+
+    def process_calibration_data(self):
+        # print("length")
+        # print(len(self.calibration_stage1_data) // 3, len(self.calibration_stage1_data) - 1)
+        # print((len(self.calibration_stage1_data) - len(self.calibration_stage1_data) // 3))
+        top_left_x = sum(i[0] for i in self.calibration_stage1_data[len(self.calibration_stage1_data) // 3: len(
+            self.calibration_stage1_data) - 1]) / (len(self.calibration_stage1_data) - (len(self.calibration_stage1_data) // 3) - 1)
+        top_left_y = sum(i[1] for i in self.calibration_stage1_data[len(self.calibration_stage1_data) // 3: len(
+            self.calibration_stage1_data) - 1]) / (len(self.calibration_stage1_data) - (len(self.calibration_stage1_data) // 3) - 1)
+        # print("first")
+        # print(x, y)
+        top_right_x = sum(i[0] for i in self.calibration_stage2_data[len(self.calibration_stage2_data) // 3: len(
+            self.calibration_stage2_data) - 1]) / (len(self.calibration_stage2_data) - (len(self.calibration_stage2_data) // 3) - 1)
+        top_right_y = sum(i[1] for i in self.calibration_stage2_data[len(self.calibration_stage2_data) // 3: len(
+            self.calibration_stage2_data) - 1]) / (len(self.calibration_stage2_data) - (len(self.calibration_stage2_data) // 3) - 1)
+        # print("second")
+        # print(x, y)
+        bottom_right_x = sum(i[0] for i in self.calibration_stage3_data[len(self.calibration_stage3_data) // 3: len(
+            self.calibration_stage3_data) - 1]) / (len(self.calibration_stage3_data) - (len(self.calibration_stage3_data) // 3) - 1)
+        bottom_right_y = sum(i[1] for i in self.calibration_stage3_data[len(self.calibration_stage3_data) // 3: len(
+            self.calibration_stage3_data) - 1]) / (len(self.calibration_stage3_data) - (len(self.calibration_stage3_data) // 3) - 1)
+        bottom_left_x = sum(i[0] for i in self.calibration_stage4_data[len(self.calibration_stage4_data) // 3: len(
+            self.calibration_stage4_data) - 1]) / (len(self.calibration_stage4_data) - (len(self.calibration_stage4_data) // 3) - 1)
+        bottom_left_y = sum(i[1] for i in self.calibration_stage4_data[len(self.calibration_stage4_data) // 3: len(
+            self.calibration_stage4_data) - 1]) / (len(self.calibration_stage4_data) - (len(self.calibration_stage4_data) // 3) - 1)
+
+        self.left = (bottom_left_x + top_left_x) / 2
+        self.right = (bottom_right_x + top_right_x) / 2
+        self.top = (top_left_y + top_right_y) / 2
+        self.bottom = (bottom_left_y + bottom_right_y) / 2
+        print("Left: %f" % self.left)
+        print("Right: %f" % self.right)
+        print("Top: %f" % self.top)
+        print("Bottom: %f" % self.bottom)
 
 
 # def getEyeball(eye, circles):
