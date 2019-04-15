@@ -29,8 +29,8 @@ class EyeTracker:
         if not cap.isOpened():
             print("Webcam not detected.")
 
-        self.frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-        self.frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        self.frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.frame_rate = cap.get(cv2.CAP_PROP_FPS)
         print("Video stats: width = {0:.0f} px | height = {1:.0f} px | FPS = {2:.0f} frames per second.".format(
             self.frame_width, self.frame_height, self.frame_rate))
@@ -47,7 +47,7 @@ class EyeTracker:
         self.left = 0
         self.right = 0
 
-        # start calibration thread
+        # start calicbration thread
         calibration = threading.Thread(target=self.start_calibration, args=())
         calibration.daemon = True
         calibration.start()
@@ -213,14 +213,25 @@ class EyeTracker:
                 cv2.circle(frame, (int(round(gaze_x)), int(
                     round(gaze_y))), radius, (0, 0, 139), -1)
 
-        # self.frame = frame
+                # add overlay
+                frame = self.add_overlay(frame, gaze_x, gaze_y)
+
         return self.add_text(frame)
-        # return grayscale
+
+    def add_overlay(self, frame, gaze_x, gaze_y):
+        overlay = frame.copy()
+        mid_x = self.frame_width // 2
+        mid_y = self.frame_height // 2
+        alpha = 0.3  # Transparency factor.
+
+        cv2.rectangle(overlay, (0 if gaze_x <= mid_x else mid_x, 0 if gaze_y <= mid_y else mid_y), (mid_x if gaze_x <= mid_x else self.frame_width, mid_y if gaze_y <= mid_y else self.frame_height), (0, 200, 0), -1)
+        # Overlays transparent rectangle over the image
+        return cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
 
     def add_text(self, frame):
         if (self.message != ""):
             cv2.putText(frame, self.message,
-                        (50, int(self.frame_height) - 15),
+                        (50, self.frame_height - 15),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         1,
                         (255, 255, 255),
@@ -233,13 +244,13 @@ class EyeTracker:
             if self.calibration_stage == 1:
                 cv2.circle(frame, (offset, offset), radius, color, -1)
             elif self.calibration_stage == 2:
-                cv2.circle(frame, (int(self.frame_width) -
+                cv2.circle(frame, (self.frame_width -
                                    offset, offset), radius, color, -1)
             elif self.calibration_stage == 3:
-                cv2.circle(frame, (int(self.frame_width) - offset,
-                                   int(self.frame_height) - offset), radius, color, -1)
+                cv2.circle(frame, (self.frame_width - offset,
+                                   self.frame_height - offset), radius, color, -1)
             elif self.calibration_stage == 4:
-                cv2.circle(frame, (offset, int(self.frame_height) -
+                cv2.circle(frame, (offset, self.frame_height -
                                    offset), radius, color, -1)
             # calbiration_stage == 5 means done
         return frame
@@ -301,15 +312,15 @@ class EyeTracker:
             bottom_left_y = sum(i[1] for i in self.calibration_stage4_data[len(self.calibration_stage4_data) // 3: len(
                 self.calibration_stage4_data) - 1]) / (len(self.calibration_stage4_data) - (len(self.calibration_stage4_data) // 3) - 1)
         else:
-            proportiontocut = 0.10
+            proportion_to_cut = 0.10
             top_left_x, top_left_y = stats.trim_mean(np.array(self.calibration_stage1_data[len(
-                self.calibration_stage1_data) // 3: len(self.calibration_stage1_data) - 1]), proportiontocut, axis=0)
+                self.calibration_stage1_data) // 3: len(self.calibration_stage1_data) - 1]), proportion_to_cut, axis=0)
             top_right_x, top_right_y = stats.trim_mean(np.array(self.calibration_stage2_data[len(
-                self.calibration_stage2_data) // 3: len(self.calibration_stage2_data) - 1]), proportiontocut, axis=0)
+                self.calibration_stage2_data) // 3: len(self.calibration_stage2_data) - 1]), proportion_to_cut, axis=0)
             bottom_right_x, bottom_right_y = stats.trim_mean(np.array(self.calibration_stage3_data[len(
-                self.calibration_stage3_data) // 3: len(self.calibration_stage3_data) - 1]), proportiontocut, axis=0)
+                self.calibration_stage3_data) // 3: len(self.calibration_stage3_data) - 1]), proportion_to_cut, axis=0)
             bottom_left_x, bottom_left_y = stats.trim_mean(np.array(self.calibration_stage4_data[len(
-                self.calibration_stage4_data) // 3: len(self.calibration_stage4_data) - 1]), proportiontocut, axis=0)
+                self.calibration_stage4_data) // 3: len(self.calibration_stage4_data) - 1]), proportion_to_cut, axis=0)
 
         self.left = (bottom_left_x + top_left_x) / 2
         self.right = (bottom_right_x + top_right_x) / 2
