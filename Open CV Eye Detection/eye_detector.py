@@ -386,13 +386,13 @@ class EyeTracker:
         else:
             proportion_to_cut = 0.10
             top_left_x, top_left_y = stats.trim_mean(np.array(self.calibration_stage1_data[len(
-                self.calibration_stage1_data) // 3: len(self.calibration_stage1_data) - 1]), proportion_to_cut, axis=0)
+                self.calibration_stage1_data) // 4: len(self.calibration_stage1_data) - 1]), proportion_to_cut, axis=0)
             top_right_x, top_right_y = stats.trim_mean(np.array(self.calibration_stage2_data[len(
-                self.calibration_stage2_data) // 3: len(self.calibration_stage2_data) - 1]), proportion_to_cut, axis=0)
+                self.calibration_stage2_data) // 4: len(self.calibration_stage2_data) - 1]), proportion_to_cut, axis=0)
             bottom_right_x, bottom_right_y = stats.trim_mean(np.array(self.calibration_stage3_data[len(
-                self.calibration_stage3_data) // 3: len(self.calibration_stage3_data) - 1]), proportion_to_cut, axis=0)
+                self.calibration_stage3_data) // 4: len(self.calibration_stage3_data) - 1]), proportion_to_cut, axis=0)
             bottom_left_x, bottom_left_y = stats.trim_mean(np.array(self.calibration_stage4_data[len(
-                self.calibration_stage4_data) // 3: len(self.calibration_stage4_data) - 1]), proportion_to_cut, axis=0)
+                self.calibration_stage4_data) // 4: len(self.calibration_stage4_data) - 1]), proportion_to_cut, axis=0)
 
         self.left = (bottom_left_x + top_left_x) / 2
         self.right = (bottom_right_x + top_right_x) / 2
