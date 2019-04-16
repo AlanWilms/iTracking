@@ -12,7 +12,7 @@ from scipy import stats
 
 class EyeTracker:
     # define several class variables
-    def __init__(self, webcam_index):
+    def __init__(self, webcam_index, calibration_sleep_time, measure_accuracy):
         try:
             self.face_cascade = cv2.CascadeClassifier(
                 cv2.data.haarcascades + "haarcascade_frontalface_alt.xml")
@@ -35,7 +35,7 @@ class EyeTracker:
         print("Video stats: width = {0:.0f} px | height = {1:.0f} px | FPS = {2:.0f} frames per second.".format(
             self.frame_width, self.frame_height, self.frame_rate))
 
-        self.sleep_time = 5
+        self.sleep_time = calibration_sleep_time
         self.message = ""
         self.calibration_stage = 0
         self.calibration_stage1_data = []
@@ -46,6 +46,9 @@ class EyeTracker:
         self.bottom = 0
         self.left = 0
         self.right = 0
+        self.measure_accuracy = True if measure_accuracy.lower() == "true" or measure_accuracy.lower() == "1" else False
+        self.accuracy_x = self.frame_width // 2
+        self.accuracy_y = self.frame_width // 2
 
         # start calicbration thread
         calibration = threading.Thread(target=self.start_calibration, args=())
@@ -237,10 +240,11 @@ class EyeTracker:
                         (255, 255, 255),
                         2)
 
-        radius = random.randint(12, 13)
-        color = (0, 0, 139)
-        offset = 20
-        if (self.calibration_stage > 0):
+        if (self.calibration_stage > 0 and self.calibration_stage <= 6):
+            radius = random.randint(12, 13)
+            color = (0, 0, 139)
+            offset = 20
+
             if self.calibration_stage == 1:
                 cv2.circle(frame, (offset, offset), radius, color, -1)
             elif self.calibration_stage == 2:
@@ -252,7 +256,9 @@ class EyeTracker:
             elif self.calibration_stage == 4:
                 cv2.circle(frame, (offset, self.frame_height -
                                    offset), radius, color, -1)
-            # calbiration_stage == 5 means done
+            elif self.calibration_stage == 6:
+                cv2.circle(frame, (self.accuracy_x, self.accuracy_y), radius, (139, 0, 0), -1)
+                cv2.circle(frame, (self.accuracy_x, self.accuracy_y), radius + 7, (139, 0, 0), 3)
         return frame
 
     def add_calibration_data(self, x, y):
@@ -282,6 +288,52 @@ class EyeTracker:
         self.calibration_stage = 5
         self.message = ""
         self.process_calibration_data(True)
+        
+        if self.measure_accuracy:
+            time.sleep(self.sleep_time)
+            self.message = "Starting accuracy test..."
+            time.sleep(self.sleep_time)
+            self.message = "Please follow the moving blue dot on screen."
+            self.calibration_stage = 6
+            time_end = time.time() + 60 # 1 minute
+            previous_direction = None
+            while time.time() < time_end:
+                direction = random.randint(1, 8)
+                movement_distance = 10 # px
+                # print("adding point...")
+                if previous_direction is None or (direction != previous_direction + 4 and direction + 4 != previous_direction):
+                    if direction == 1:
+                        self.move_accuracy_point_y(self.accuracy_y + movement_distance)
+                    elif direction == 2:
+                        self.move_accuracy_point_y(self.accuracy_y + movement_distance)
+                        self.move_accuracy_point_x(self.accuracy_x + movement_distance)
+                    elif direction == 3:
+                        self.move_accuracy_point_x(self.accuracy_x + movement_distance)
+                    elif direction == 4:
+                        self.move_accuracy_point_y(self.accuracy_y - movement_distance)
+                        self.move_accuracy_point_x(self.accuracy_x + movement_distance)
+                    elif direction == 5:
+                        self.move_accuracy_point_y(self.accuracy_y - movement_distance)
+                    elif direction == 6:
+                        self.move_accuracy_point_y(self.accuracy_y - movement_distance)
+                        self.move_accuracy_point_x(self.accuracy_x - movement_distance)
+                    elif direction == 7:
+                        self.move_accuracy_point_x(self.accuracy_x - movement_distance)
+                    elif direction == 8:
+                        self.move_accuracy_point_y(self.accuracy_y + movement_distance)
+                        self.move_accuracy_point_x(self.accuracy_x - movement_distance)
+                    previous_direction = direction
+                    time.sleep(0.1)
+
+        self.calibration_stage = 7 # done with everything
+
+    def move_accuracy_point_x(self, new_value):
+        offset = 20
+        self.accuracy_x = new_value if new_value > offset and new_value < self.frame_width - offset else self.accuracy_x
+
+    def move_accuracy_point_y(self, new_value):
+        offset = 20
+        self.accuracy_y = new_value if new_value > offset and new_value < self.frame_height - offset else self.accuracy_y
 
     def process_calibration_data(self, remove_outliers=True):
         top_left_x = 0
@@ -326,19 +378,20 @@ class EyeTracker:
         self.right = (bottom_right_x + top_right_x) / 2
         self.top = (top_left_y + top_right_y) / 2
         self.bottom = (bottom_left_y + bottom_right_y) / 2
+        if self.right <= self.left or self.bottom <= self.top:
+            raise Exception('Calibration process failed. Please try again')
         print("Left: %f" % self.left)
         print("Right: %f" % self.right)
         print("Top: %f" % self.top)
         print("Bottom: %f" % self.bottom)
 
-
 # def getEyeball(eye, circles):
 if __name__ == "__main__":
     # print('\n'.join(sys.path))
     # looking for one argument
-    if len(sys.argv) == 2:
-        EyeTracker(int(sys.argv[1]))
+    if len(sys.argv) == 4:
+        EyeTracker(int(sys.argv[1]), int(sys.argv[2]), sys.argv[3])
     else:
-        exit("Missing Webcam index. Run 'python3 eye_detector.py 0'.")
+        exit("Missing Webcam index. Run 'python3 eye_detector.py 0 5 true'.")
 
 # RUN via "python3 eye_detector.py 0"
