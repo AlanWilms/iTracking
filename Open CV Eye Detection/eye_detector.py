@@ -48,7 +48,7 @@ class EyeTracker:
         self.right = 0
         self.measure_accuracy = True if measure_accuracy.lower() == "true" or measure_accuracy.lower() == "1" else False
         self.accuracy_x = self.frame_width // 2
-        self.accuracy_y = self.frame_width // 2
+        self.accuracy_y = self.frame_height // 2
 
         # start calicbration thread
         calibration = threading.Thread(target=self.start_calibration, args=())
@@ -180,6 +180,8 @@ class EyeTracker:
             percentage_x = closest_cx / lew
             percentage_y = closest_cy / leh
             if self.calibration_stage > 0 and self.calibration_stage < 5:
+                # print(self.calibration_stage)
+                # print(percentage_x)
                 # self.add_calibration_data(
                 #     x + lex + closest_cx, y + ley + closest_cy)
                 # self.add_calibration_data(closest_cx, closest_cy)
@@ -295,36 +297,59 @@ class EyeTracker:
             time.sleep(self.sleep_time)
             self.message = "Please follow the moving blue dot on screen."
             self.calibration_stage = 6
-            time_end = time.time() + 60 # 1 minute
-            previous_direction = None
+            movement_distance = 10 # px
+            # time_end = time.time() + 60 # 1 minute
+            # previous_direction = None
+            # while time.time() < time_end:
+            #     direction = random.randint(1, 8)
+            #     movement_distance = 10 # px
+            #     # print("adding point...")
+            #     if previous_direction is None or (direction != previous_direction + 4 and direction + 4 != previous_direction):
+            #         if direction == 1:
+            #             self.move_accuracy_point_y(self.accuracy_y + movement_distance)
+            #         elif direction == 2:
+            #             self.move_accuracy_point_y(self.accuracy_y + movement_distance)
+            #             self.move_accuracy_point_x(self.accuracy_x + movement_distance)
+            #         elif direction == 3:
+            #             self.move_accuracy_point_x(self.accuracy_x + movement_distance)
+            #         elif direction == 4:
+            #             self.move_accuracy_point_y(self.accuracy_y - movement_distance)
+            #             self.move_accuracy_point_x(self.accuracy_x + movement_distance)
+            #         elif direction == 5:
+            #             self.move_accuracy_point_y(self.accuracy_y - movement_distance)
+            #         elif direction == 6:
+            #             self.move_accuracy_point_y(self.accuracy_y - movement_distance)
+            #             self.move_accuracy_point_x(self.accuracy_x - movement_distance)
+            #         elif direction == 7:
+            #             self.move_accuracy_point_x(self.accuracy_x - movement_distance)
+            #         elif direction == 8:
+            #             self.move_accuracy_point_y(self.accuracy_y + movement_distance)
+            #             self.move_accuracy_point_x(self.accuracy_x - movement_distance)
+            #         previous_direction = direction
+            #         time.sleep(0.1)
+            time_end = time.time() + 3.5
             while time.time() < time_end:
-                direction = random.randint(1, 8)
-                movement_distance = 10 # px
-                # print("adding point...")
-                if previous_direction is None or (direction != previous_direction + 4 and direction + 4 != previous_direction):
-                    if direction == 1:
-                        self.move_accuracy_point_y(self.accuracy_y + movement_distance)
-                    elif direction == 2:
-                        self.move_accuracy_point_y(self.accuracy_y + movement_distance)
-                        self.move_accuracy_point_x(self.accuracy_x + movement_distance)
-                    elif direction == 3:
-                        self.move_accuracy_point_x(self.accuracy_x + movement_distance)
-                    elif direction == 4:
-                        self.move_accuracy_point_y(self.accuracy_y - movement_distance)
-                        self.move_accuracy_point_x(self.accuracy_x + movement_distance)
-                    elif direction == 5:
-                        self.move_accuracy_point_y(self.accuracy_y - movement_distance)
-                    elif direction == 6:
-                        self.move_accuracy_point_y(self.accuracy_y - movement_distance)
-                        self.move_accuracy_point_x(self.accuracy_x - movement_distance)
-                    elif direction == 7:
-                        self.move_accuracy_point_x(self.accuracy_x - movement_distance)
-                    elif direction == 8:
-                        self.move_accuracy_point_y(self.accuracy_y + movement_distance)
-                        self.move_accuracy_point_x(self.accuracy_x - movement_distance)
-                    previous_direction = direction
-                    time.sleep(0.1)
-
+                self.move_accuracy_point_y(self.accuracy_y - movement_distance)
+                self.move_accuracy_point_x(self.accuracy_x - movement_distance)
+                time.sleep(0.1)
+            time_end = time.time() + 6
+            while time.time() < time_end:
+                self.move_accuracy_point_x(self.accuracy_x + movement_distance)
+                time.sleep(0.1)
+            time_end = time.time() + 5
+            while time.time() < time_end:
+                self.move_accuracy_point_y(self.accuracy_y + movement_distance)
+                time.sleep(0.1)
+            time_end = time.time() + 7
+            while time.time() < time_end:
+                self.move_accuracy_point_x(self.accuracy_x - movement_distance)
+                time.sleep(0.1)
+            time_end = time.time() + 3
+            while time.time() < time_end:
+                self.move_accuracy_point_y(self.accuracy_y - movement_distance)
+                self.move_accuracy_point_x(self.accuracy_x + movement_distance)
+                time.sleep(0.1)
+                
         self.calibration_stage = 7 # done with everything
 
     def move_accuracy_point_x(self, new_value):
