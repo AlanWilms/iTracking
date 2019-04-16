@@ -49,6 +49,8 @@ class EyeTracker:
         self.measure_accuracy = True if measure_accuracy.lower() == "true" or measure_accuracy.lower() == "1" else False
         self.accuracy_x = self.frame_width // 2
         self.accuracy_y = self.frame_height // 2
+        self.accuracy_distance = []
+        self.accuracy_quadrant = []
 
         # start calicbration thread
         calibration = threading.Thread(target=self.start_calibration, args=())
@@ -186,6 +188,7 @@ class EyeTracker:
                 #     x + lex + closest_cx, y + ley + closest_cy)
                 # self.add_calibration_data(closest_cx, closest_cy)
                 self.add_calibration_data(percentage_x, percentage_y)
+
             if self.calibration_stage >= 5:
                 radius = 10
 
@@ -221,7 +224,27 @@ class EyeTracker:
                 # add overlay
                 frame = self.add_overlay(frame, gaze_x, gaze_y)
 
+            if self.calibration_stage == 6:
+                distance = math.sqrt((gaze_x - self.accuracy_x)**2 + (gaze_y - self.accuracy_y)**2)
+                self.accuracy_distance.append(distance);
+                gaze_quadrant = self.find_quadrant(gaze_x, gaze_y)
+                accuracy_quadrant = self.find_quadrant(self.accuracy_x, self.accuracy_y)
+                self.accuracy_quadrant.append((gaze_quadrant, accuracy_quadrant))
+
         return self.add_text(frame)
+
+    def find_quadrant(self, point_x, point_y):
+        mid_x = self.frame_width // 2
+        mid_y = self.frame_height // 2
+        if point_x <= mid_x and point_y <= mid_y:
+            return 1
+        elif point_x > mid_x and point_y <= mid_y:
+            return 2
+        elif point_x > mid_x and point_y > mid_y:
+            return 3
+        else:
+            # point_x <= mid_x and point_y > mid_y
+            return 4 
 
     def add_overlay(self, frame, gaze_x, gaze_y):
         overlay = frame.copy()
@@ -298,35 +321,6 @@ class EyeTracker:
             self.message = "Please follow the moving blue dot on screen."
             self.calibration_stage = 6
             movement_distance = 10 # px
-            # time_end = time.time() + 60 # 1 minute
-            # previous_direction = None
-            # while time.time() < time_end:
-            #     direction = random.randint(1, 8)
-            #     movement_distance = 10 # px
-            #     # print("adding point...")
-            #     if previous_direction is None or (direction != previous_direction + 4 and direction + 4 != previous_direction):
-            #         if direction == 1:
-            #             self.move_accuracy_point_y(self.accuracy_y + movement_distance)
-            #         elif direction == 2:
-            #             self.move_accuracy_point_y(self.accuracy_y + movement_distance)
-            #             self.move_accuracy_point_x(self.accuracy_x + movement_distance)
-            #         elif direction == 3:
-            #             self.move_accuracy_point_x(self.accuracy_x + movement_distance)
-            #         elif direction == 4:
-            #             self.move_accuracy_point_y(self.accuracy_y - movement_distance)
-            #             self.move_accuracy_point_x(self.accuracy_x + movement_distance)
-            #         elif direction == 5:
-            #             self.move_accuracy_point_y(self.accuracy_y - movement_distance)
-            #         elif direction == 6:
-            #             self.move_accuracy_point_y(self.accuracy_y - movement_distance)
-            #             self.move_accuracy_point_x(self.accuracy_x - movement_distance)
-            #         elif direction == 7:
-            #             self.move_accuracy_point_x(self.accuracy_x - movement_distance)
-            #         elif direction == 8:
-            #             self.move_accuracy_point_y(self.accuracy_y + movement_distance)
-            #             self.move_accuracy_point_x(self.accuracy_x - movement_distance)
-            #         previous_direction = direction
-            #         time.sleep(0.1)
             time_end = time.time() + 3.5
             while time.time() < time_end:
                 self.move_accuracy_point_y(self.accuracy_y - movement_distance)
@@ -351,6 +345,7 @@ class EyeTracker:
                 time.sleep(0.1)
                 
         self.calibration_stage = 7 # done with everything
+        self.process_accuracy_data()
 
     def move_accuracy_point_x(self, new_value):
         offset = 20
@@ -405,12 +400,30 @@ class EyeTracker:
         self.bottom = (bottom_left_y + bottom_right_y) / 2
         if self.right <= self.left or self.bottom <= self.top:
             raise Exception('Calibration process failed. Please try again')
-        print("Left: %f" % self.left)
-        print("Right: %f" % self.right)
-        print("Top: %f" % self.top)
-        print("Bottom: %f" % self.bottom)
+        print('Left: {}'.format(self.left))
+        print('Right: {}'.format(self.right))
+        print('Top: {}'.format(self.top))
+        print('Bottom: {}'.format(self.bottom))
 
-# def getEyeball(eye, circles):
+    def process_accuracy_data(self):
+        threshold = self.frame_width // 10 # px
+        numerator = 0
+        denominator = 0
+
+        for quadrant in self.accuracy_quadrant:
+            if quadrant[0] == quadrant[1]:
+                numerator += 1    
+            denominator += 1
+        print('Quadrant Accuracy: {}'.format(numerator / denominator))
+
+        numerator = 0
+        denominator = 0
+        for distance in self.accuracy_distance:
+            if distance <= threshold:
+                numerator += 1    
+            denominator += 1
+        print('Accuracy within {} px: {}'.format(threshold, numerator / denominator))
+
 if __name__ == "__main__":
     # print('\n'.join(sys.path))
     # looking for one argument
