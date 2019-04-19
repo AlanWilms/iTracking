@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Author: Alan Wilms
 
 import sys
 import cv2
@@ -433,3 +434,5 @@ if __name__ == "__main__":
         exit("Missing Webcam index. Run 'python3 eye_detector.py 0 5 true'.")
 
 # RUN via "python3 eye_detector.py 0 5 True"
+
+# Copyright (c) 2019 Vanderbilt University
