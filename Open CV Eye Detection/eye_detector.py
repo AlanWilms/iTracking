@@ -432,4 +432,4 @@ if __name__ == "__main__":
     else:
         exit("Missing Webcam index. Run 'python3 eye_detector.py 0 5 true'.")
 
-# RUN via "python3 eye_detector.py 0"
+# RUN via "python3 eye_detector.py 0 5 True"
