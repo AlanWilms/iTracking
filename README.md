@@ -3,7 +3,7 @@ Senior Design Project
 
 # Introduction
 Current eye trackers are expensive and require licenses for each user, driving up research costs. Use in child behavior research poses additional difficulties, including following subject movement and managing lighting conditions.
-While this project was done as a part of a group with Minh Chung, Pam Karwowski, Matthew Kernen, Jefferson Kim, and Myungjoon Lee, *the non-forked code in this repository was solely and exclusively my work*.
+While this project was done as a part of a group with Minh Chung, Pam Karwowski, Matthew Kernen, Jefferson Kim, and Myungjoon Lee, *the non-forked code in this repository was solely and exclusively my work*. See the full poster here: 
 
 # Objectives
 - Real time face identification
@@ -27,16 +27,17 @@ A four-point calibration with red dots allows a boundary-mapping to occur betwee
 
 An optional accuracy tests presents a moving blue dot. The x- and y-coordinates of the dot is treated as the ground truth and compared with the calculated gaze location.
 
-#Instructions:
+# Instructions:
+After cloning the repository, an example execution is as follows:
 ```
-sudo systemctl stop joy_detection_demo
 cd Open\ CV\ Eye\ Detection/
 python3 eye_detector.py 0 5 True
 ```
 
 # Results
-(./images/poster_image_1.png)
-(./images/poster_image_2.png)
+![Poster Image 2](./Images/poster_image_2.png)
+![Poster Image 1](./Images/poster_image_1.png)
+
 Pupil centered eye tracking has limited freedom of movement and is sensitive to extreme lighting changes
 After 6 tests, the quadrant accuracy was calculated to be 58.98% (and point accuracy within 1/10 of the screen, or 128 px, was calculated to be 11.38%).
 
