@@ -4,7 +4,7 @@ Senior Design Project
 
 # Introduction
 Current eye trackers are expensive and require licenses for each user, driving up research costs. Use in child behavior research poses additional difficulties, including following subject movement and managing lighting conditions.
-While this project was done as a part of a group with Minh Chung, Pam Karwowski, Matthew Kernen, Jefferson Kim, and Myungjoon Lee, *the non-forked code in this repository was solely and exclusively my work*. See the final [poster](./final_poster.pdf) and [report](./final_report.pdf) for more informatiom.
+While this project was done as a part of a group with Minh Chung, Pam Karwowski, Matthew Kernen, Jefferson Kim, and Myungjoon Lee, *the non-forked code in this repository was solely and exclusively my work*. See the final [poster](./final_poster.pdf) and [report](./final_report.pdf) for more information.
 
 # Objectives
 - Real time face identification
